@@ -20,9 +20,11 @@ public class HttpResponseAsync extends AsyncTask<Void,Void,String> {
 
     //コンストラクタ
     public HttpResponseAsync(){}
+
     public HttpResponseAsync(String urlSt){
         this.urlSt = urlSt;
     }
+
     //メソッド
     public void setUrlSt( String urlSt){
         this.urlSt = urlSt;
@@ -34,28 +36,48 @@ public class HttpResponseAsync extends AsyncTask<Void,Void,String> {
     //接続のメソッド
     @Override
     protected String doInBackground( Void... params){
+        StringBuilder sb = new StringBuilder();
+        InputStream in = null;
         HttpURLConnection con = null;
-        URL url = null;
         String readSt = null;
         try{
-            url = new URL(urlSt);
+            URL url = new URL(urlSt);
+            //Log.d("doInBackground","beforeConnection");
             con = (HttpURLConnection)url.openConnection();
+            //Log.d("doInBackground","afterConnection");
+            con.setConnectTimeout( 3000 );
+            con.setReadTimeout( 3000 );
             con.setRequestMethod("POST");
-            con.setInstanceFollowRedirects(true);//リダイレクトする
+
+            con.connect();
+            int resCode = con.getResponseCode();
+            if( resCode != HttpURLConnection.HTTP_OK){
+                throw new IOException("HTTP responseCode:"  + resCode );
+            }
+
+
+            //con.setInstanceFollowRedirects(true);//リダイレクトする
             con.setDoInput(true);//リターンされた値を使う
             con.setDoOutput(true);
-            con.connect();
-            InputStream in = con.getInputStream();
+            //Log.d("doInBackground","connect start");
 
+            //Log.d("doInBackground","connect end");
+            in = con.getInputStream();
+            //Log.d( "doInBAckground", "before readInputStream");
             readSt = readInputStream( in );
 
             byte bodyByte[] = new byte[1024];
             in.read( bodyByte );
             in.close();
 
-
         }catch(Exception e){
+
             Log.d("error",e.toString() );
+            //Log.d( "error" , con.getErrorStream().toString() );
+        }finally{
+            if(con != null ){
+                con.disconnect();
+            }
         }
 
         return readSt;
